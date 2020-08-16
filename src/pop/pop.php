@@ -17,7 +17,7 @@
          * @param int $max_arguments
          * @return array Configs Key/Value
          */
-        public static function parse(&$message = null, $max_arguments=1000): array
+        public static function parse($message=null, $max_arguments=1000): array
         {
             if (is_string($message))
             {
