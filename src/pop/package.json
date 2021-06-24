@@ -2,7 +2,7 @@
     "package": {
         "package_name": "net.intellivoid.pop",
         "name": "Parameter Option Parser",
-        "version": "1.0.0.1",
+        "version": "1.0.0.2",
         "author": "Zi Xing Narrakas",
         "organization": "Intellivoid",
         "description": "Parses options and values from a string or command-line argument",
