@@ -21,11 +21,11 @@
         {
             if (is_string($message))
             {
-                $argv = explode(' ', $message);
+                $flags = $message;
             }
             elseif(is_array($message))
             {
-                $argv = $message;
+                $flags = implode(' ', $message);
             }
             else
             {
@@ -34,48 +34,47 @@
                 {
                     array_shift($argv);
                 }
+                $flags = implode(' ',  $argv);
             }
 
-            $index = 0;
             $configs = array();
-            while ($index < $max_arguments && isset($argv[$index]))
+            $regex = "/(?(?=-)-(?(?=-)-(?'bigflag'[^\\s=]+)|(?'smallflag'\\S))(?:\\s*=\\s*|\\s+)(?(?!-)(?(?=[\\\"\\'])((?<![\\\\])['\"])(?'string'(?:.(?!(?<![\\\\])\\3))*.?)\\3|(?'value'\\S+)))(?:\\s+)?|(?'unmatched'\\S+))/";
+            preg_match_all($regex, $flags, $matches, PREG_SET_ORDER);
+
+            foreach ($matches as $index => $match)
             {
-                if (preg_match('/^([^-\=]+.*)$/', $argv[$index], $matches) === 1)
+                if (isset($match['value']) && $match['value'] !== '')
                 {
-                    // not have ant -= prefix
-                    $configs[$matches[1]] = true;
+                    $value = $match['value'];
                 }
-                elseif(preg_match('/^-+(.+)$/', $argv[$index], $matches) === 1)
+                else if (isset($match['string']) && $match['string'] !== '')
                 {
-                    // match prefix - with next parameter
-                    if (preg_match('/^-+(.+)\=(.+)$/', $argv[$index], $subMatches) === 1)
-                    {
-                        $configs[$subMatches[1]] = $subMatches[2];
-                    }
-                    elseif(isset($argv[$index + 1]) && preg_match('/^[^-\=]+$/', $argv[$index + 1]) === 1)
-                    {
-                        // have sub parameter
-                        $configs[$matches[1]] = $argv[$index + 1];
-                        $index++;
-                    }
-                    elseif(strpos($matches[0], '--') === false)
-                    {
-                        for ($j = 0; $j < strlen($matches[1]); $j += 1)
-                        {
-                            $configs[$matches[1][$j]] = true;
-                        }
-                    }
-                    elseif(isset($argv[$index + 1]) && preg_match('/^[^-].+$/', $argv[$index + 1]) === 1)
-                    {
-                        $configs[$matches[1]] = $argv[$index + 1];
-                        $index++;
-                    }
-                    else
-                    {
-                        $configs[$matches[1]] = true;
-                    }
+                    // fix escaped quotes
+                    $value = str_replace("\\\"", "\"", $match['string']);
+                    $value = str_replace("\\'", "'", $value);
                 }
-                $index++;
+                else
+                {
+                    $value = true;
+                }
+
+                if (isset($match['bigflag']) && $match['bigflag'] !== '')
+                {
+                    $configs[$match['bigflag']] = $value;
+                }
+                
+                if (isset($match['smallflag']) && $match['smallflag'] !== '')
+                {
+                    $configs[$match['smallflag']] = $value;
+                }
+
+                if (isset($match['unmatched']) && $match['unmatched'] !== '')
+                {
+                    $configs[$match['unmatched']] = true;
+                }
+                
+                if ($index >= $max_arguments)
+                    break;
             }
 
             return $configs;
