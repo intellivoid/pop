@@ -2,9 +2,9 @@ name: PPM Release Parameter Option Parser
 
 on:
   push:
-    branches: [ production ]
+    branches: [ master ]
   pull_request:
-    branches: [ production ]
+    branches: [ master ]
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
         run: sudo ./install
       - name: Configuring PPM
         run: sudo ppm --github-add-pat --alias="system" --token="${{ secrets.PPM_ACCESS_TOKEN }}"
-      - uses: actions/checkout@production
+      - uses: actions/checkout@master
       - name: Make build directory
         run: mkdir build
 
