@@ -1,0 +1,49 @@
+name: PPM Release Parameter Option Parser
+
+on:
+  push:
+    branches: [ production ]
+  pull_request:
+    branches: [ production ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Add repoistory for PHP 8.0
+        run: sudo add-apt-repository ppa:ondrej/php
+      - name: Install PHP 8.0
+        run: sudo apt-get install php8.0 php8.0-curl php8.0-mbstring php8.0-tokenizer php8.0-fileinfo
+
+      - uses: actions/checkout@v2
+        with:
+          repository: intellivoid/ppm
+          ref: "production"
+          token: ${{ secrets.PPM_ACCESS_TOKEN }}
+      - name: Install PPM
+        run: sudo ./install
+      - name: Configuring PPM
+        run: sudo ppm --github-add-pat --alias="system" --token="${{ secrets.PPM_ACCESS_TOKEN }}"
+      - uses: actions/checkout@production
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Prepare Parameter Option Parser
+        run: ppm --generate-package="src/pop"
+      - name: Compile Parameter Option Parser
+        run: ppm --no-intro --verbose --compile="src/pop" --directory="build"
+      - name: Install Parameter Option Parser
+        run: sudo -H ppm --no-prompt --fix-conflict --verbose --install="build/net.intellivoid.pop.ppm"
+
+      - name: Get Package Version
+        run: echo package_version=$(ppm --get-version="build/net.intellivoid.pop.ppm") >> $GITHUB_ENV
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/net.intellivoid.pop.ppm
+          name: "Parameter Option Parser v${{ env.package_version }}"
+          tag_name: "v${{ env.package_version }}"
+          body: "Compiled PPM package for Parameter Option Parser, version ${{ env.package_version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
